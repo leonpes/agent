@@ -68,21 +68,6 @@ app.post('/receiveMessage', (req, res) => {
   }
 
   const acceptPhrases = [`${currentName} I accept`.toLowerCase(), `${currentName} I agree`.toLowerCase()].includes(req.body.text.toLowerCase());
-  if (currentBid && acceptPhrases) {
-    const payload = {
-      text: "You got it! Enjoy your purchase!",
-      speaker: currentName,
-      role: 'seller',
-      addressee: 'Human',
-      timeStamp: new Date(),
-      bid: currentBid
-    };
-    payload.bid.type = 'Accept';
-
-    postToService('environment-orchestrator', '/relayMessage', payload);
-
-    return res.json({status: 'acknowledged'});
-  }
 
   const current = {};
   logExpression(`Matching items with: ${ingredientPattern}`);
@@ -111,9 +96,26 @@ app.post('/receiveMessage', (req, res) => {
   }
 
   logExpression(`Parsed bid price: ${bidPrice}`, 2);
+  const ing = Object.keys(current)[0];
+  const expense = parseInt(currentUtility.utility.ing.parameters.unitcost)*current[ing];
 
-  if (Math.random() > 0.4) {
-    bidPrice += Math.random() * 4;
+  if (expense >= bidPrice) {
+    bidPrice += 1;
+  }
+  else {
+    const payload = {
+      text: "You got it! Enjoy your purchase!",
+      speaker: currentName,
+      role: 'seller',
+      addressee: 'Human',
+      timeStamp: new Date(),
+      bid: currentBid
+    };
+    payload.bid.type = 'Accept';
+
+    postToService('environment-orchestrator', '/relayMessage', payload);
+
+    return res.json({status: 'acknowledged'});
   }
 
   logExpression(`Adjusted bid price: ${bidPrice}`, 2);
